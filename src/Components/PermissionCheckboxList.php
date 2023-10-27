@@ -20,12 +20,12 @@ class PermissionCheckboxList extends Field
 
     public static function isAll(Form $form, string $name): bool
     {
-        return static::checkboxLists($form, $name)->flatMap(function (CheckboxList $checkboxList) {
+        return self::checkboxLists($form, $name)->flatMap(function (CheckboxList $checkboxList) {
             return collect($checkboxList->getEnabledOptions())->keys()->diff($checkboxList->getState());
         })->isEmpty();
     }
 
-    public static function permissions(bool | array | Collection $state): array
+    public static function permissions(bool|array|Collection $state): array
     {
         if (is_bool($state)) {
             $permissions = $state ? Permission::all() : collect();
@@ -36,7 +36,7 @@ class PermissionCheckboxList extends Field
         }
 
         return static::permissionGroupByPrefix($permissions)
-            ->map(fn (Collection $group) => $group->pluck('id'))
+            ->map(fn(Collection $group) => $group->pluck('id'))
             ->toArray();
     }
 
@@ -63,13 +63,13 @@ class PermissionCheckboxList extends Field
                             CheckboxList::make($entity)->label('')
                                 ->options($options)
                                 ->live()
-                                ->selectAllAction(fn (Action $action, CheckboxList $component) => $action
+                                ->selectAllAction(fn(Action $action, CheckboxList $component) => $action
                                     ->livewireClickHandlerEnabled()
-                                    ->action(fn () => $this->toggleCheckboxList($component, true, true)))
-                                ->deselectAllAction(fn (Action $action, CheckboxList $component) => $action
+                                    ->action(fn() => $this->toggleCheckboxList($component, true, true)))
+                                ->deselectAllAction(fn(Action $action, CheckboxList $component) => $action
                                     ->livewireClickHandlerEnabled()
-                                    ->action(fn () => $this->toggleCheckboxList($component, false, true)))
-                                ->afterStateUpdated(fn ($state) => $this->updateSelectAll())
+                                    ->action(fn() => $this->toggleCheckboxList($component, false, true)))
+                                ->afterStateUpdated(fn($state) => $this->updateSelectAll())
                                 ->bulkToggleable()
                                 ->gridDirection('row')
                                 ->columns(['sm' => 2, 'lg' => 3]),
@@ -89,8 +89,8 @@ class PermissionCheckboxList extends Field
                 return;
             }
 
-            $state = static::checkboxLists($this->getForm(), $this->getName())
-                ->flatMap(fn (CheckboxList $checkboxList) => array_keys($checkboxList->getEnabledOptions()))
+            $state = self::checkboxLists($this->getForm(), $this->getName())
+                ->flatMap(fn(CheckboxList $checkboxList) => array_keys($checkboxList->getEnabledOptions()))
                 ->diff($record->permissions->pluck('id'))
                 ->isEmpty();
 
@@ -110,8 +110,8 @@ class PermissionCheckboxList extends Field
                 return $component->state([]);
             }
 
-            $state = static::permissionGroupByPrefix($record->getAllPermissions())
-                ->map(fn (Collection $permissions) => $permissions->pluck('id'))
+            $state = self::permissionGroupByPrefix($record->getAllPermissions())
+                ->map(fn(Collection $permissions) => $permissions->pluck('id'))
                 ->toArray();
 
             return $component->state($state);
@@ -131,12 +131,12 @@ class PermissionCheckboxList extends Field
 
     private function updateSelectAll(): void
     {
-        $this->selectAll()->state(static::isAll($this->getForm(), $this->getName()));
+        $this->selectAll()->state(self::isAll($this->getForm(), $this->getName()));
     }
 
     private function selectAll(): Component
     {
-        return static::getField($this->getForm(), 'select_all');
+        return self::getField($this->getForm(), 'select_all');
     }
 
     private function getForm(): Form
@@ -153,14 +153,14 @@ class PermissionCheckboxList extends Field
 
     private static function checkboxLists(Form $form, string $name): Collection
     {
-        return collect(static::getField($form, $name)->getChildComponents())
-            ->flatMap(fn (Component $component) => $component->getChildComponents());
+        return collect(self::getField($form, $name)->getChildComponents())
+            ->flatMap(fn(Component $component) => $component->getChildComponents());
     }
 
     private static function getField(Form $form, string $name): Component
     {
         return collect($form->getFlatComponents())
-            ->filter(fn (Component $component) => is_a($component, Field::class))
-            ->first(fn (Field $select) => $select->getName() === $name);
+            ->filter(fn(Component $component) => is_a($component, Field::class))
+            ->first(fn(Field $select) => $select->getName() === $name);
     }
 }
