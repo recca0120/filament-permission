@@ -1,8 +1,7 @@
 <?php
 
-namespace VendorName\Skeleton;
+namespace Recca0120\FilamentPermission;
 
-use Filament\Support\Assets\AlpineComponent;
 use Filament\Support\Assets\Asset;
 use Filament\Support\Assets\Css;
 use Filament\Support\Assets\Js;
@@ -10,17 +9,17 @@ use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Facades\FilamentIcon;
 use Illuminate\Filesystem\Filesystem;
 use Livewire\Features\SupportTesting\Testable;
+use Recca0120\FilamentPermission\Commands\FilamentPermissionCommand;
+use Recca0120\FilamentPermission\Testing\TestsFilamentPermission;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use VendorName\Skeleton\Commands\SkeletonCommand;
-use VendorName\Skeleton\Testing\TestsSkeleton;
 
-class SkeletonServiceProvider extends PackageServiceProvider
+class FilamentPermissionServiceProvider extends PackageServiceProvider
 {
-    public static string $name = 'skeleton';
+    public static string $name = 'filament-permission';
 
-    public static string $viewNamespace = 'skeleton';
+    public static string $viewNamespace = 'filament-permission';
 
     public function configurePackage(Package $package): void
     {
@@ -30,13 +29,13 @@ class SkeletonServiceProvider extends PackageServiceProvider
          * More info: https://github.com/spatie/laravel-package-tools
          */
         $package->name(static::$name)
-            ->hasCommands($this->getCommands())
+//            ->hasCommands($this->getCommands())
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
                     ->publishConfigFile()
-                    ->publishMigrations()
-                    ->askToRunMigrations()
-                    ->askToStarRepoOnGitHub(':vendor_slug/:package_slug');
+//                    ->publishMigrations()
+//                    ->askToRunMigrations()
+                    ->askToStarRepoOnGitHub('recca0120/filament-permission');
             });
 
         $configFileName = $package->shortName();
@@ -65,35 +64,35 @@ class SkeletonServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         // Asset Registration
-        FilamentAsset::register(
-            $this->getAssets(),
-            $this->getAssetPackageName()
-        );
-
-        FilamentAsset::registerScriptData(
-            $this->getScriptData(),
-            $this->getAssetPackageName()
-        );
+//        FilamentAsset::register(
+//            $this->getAssets(),
+//            $this->getAssetPackageName()
+//        );
+//
+//        FilamentAsset::registerScriptData(
+//            $this->getScriptData(),
+//            $this->getAssetPackageName()
+//        );
 
         // Icon Registration
         FilamentIcon::register($this->getIcons());
 
         // Handle Stubs
         if (app()->runningInConsole()) {
-            foreach (app(Filesystem::class)->files(__DIR__ . '/../stubs/') as $file) {
+            foreach (app(Filesystem::class)->files(__DIR__.'/../stubs/') as $file) {
                 $this->publishes([
-                    $file->getRealPath() => base_path("stubs/skeleton/{$file->getFilename()}"),
-                ], 'skeleton-stubs');
+                    $file->getRealPath() => base_path("stubs/filament-permission/{$file->getFilename()}"),
+                ], 'filament-permission-stubs');
             }
         }
 
         // Testing
-        Testable::mixin(new TestsSkeleton());
+        Testable::mixin(new TestsFilamentPermission());
     }
 
     protected function getAssetPackageName(): ?string
     {
-        return ':vendor_slug/:package_slug';
+        return 'recca0120/filament-permission';
     }
 
     /**
@@ -102,9 +101,9 @@ class SkeletonServiceProvider extends PackageServiceProvider
     protected function getAssets(): array
     {
         return [
-            // AlpineComponent::make('skeleton', __DIR__ . '/../resources/dist/components/skeleton.js'),
-            Css::make('skeleton-styles', __DIR__ . '/../resources/dist/skeleton.css'),
-            Js::make('skeleton-scripts', __DIR__ . '/../resources/dist/skeleton.js'),
+            // AlpineComponent::make('filament-permission', __DIR__ . '/../resources/dist/components/filament-permission.js'),
+            Css::make('filament-permission-styles', __DIR__.'/../resources/dist/filament-permission.css'),
+            Js::make('filament-permission-scripts', __DIR__.'/../resources/dist/filament-permission.js'),
         ];
     }
 
@@ -114,7 +113,7 @@ class SkeletonServiceProvider extends PackageServiceProvider
     protected function getCommands(): array
     {
         return [
-            SkeletonCommand::class,
+            FilamentPermissionCommand::class,
         ];
     }
 
@@ -148,7 +147,7 @@ class SkeletonServiceProvider extends PackageServiceProvider
     protected function getMigrations(): array
     {
         return [
-            'create_skeleton_table',
+            'create_filament-permission_table',
         ];
     }
 }

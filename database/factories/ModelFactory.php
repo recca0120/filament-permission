@@ -1,6 +1,6 @@
 <?php
 
-namespace VendorName\Skeleton\Database\Factories;
+namespace Recca0120\FilamentPermission\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 

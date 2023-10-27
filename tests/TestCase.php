@@ -1,6 +1,6 @@
 <?php
 
-namespace VendorName\Skeleton\Tests;
+namespace Recca0120\FilamentPermission\Tests;
 
 use BladeUI\Heroicons\BladeHeroiconsServiceProvider;
 use BladeUI\Icons\BladeIconsServiceProvider;
@@ -18,7 +18,10 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
-use VendorName\Skeleton\SkeletonServiceProvider;
+use Recca0120\FilamentPermission\FilamentPermissionServiceProvider;
+use Recca0120\FilamentPermission\Tests\Fixtures\FilamentPermissionPanelProvider;
+use Spatie\Permission\PermissionServiceProvider;
+use Illuminate\Encryption\Encrypter;
 
 class TestCase extends Orchestra
 {
@@ -26,9 +29,9 @@ class TestCase extends Orchestra
     {
         parent::setUp();
 
-        Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'VendorName\\Skeleton\\Database\\Factories\\' . class_basename($modelName) . 'Factory'
-        );
+        Factory::guessFactoryNamesUsing(function (string $modelName) {
+            return 'Recca0120\\FilamentPermission\\Database\\Factories\\'.class_basename($modelName).'Factory';
+        });
     }
 
     protected function getPackageProviders($app)
@@ -43,21 +46,27 @@ class TestCase extends Orchestra
             InfolistsServiceProvider::class,
             LivewireServiceProvider::class,
             NotificationsServiceProvider::class,
-            SpatieLaravelSettingsPluginServiceProvider::class,
-            SpatieLaravelTranslatablePluginServiceProvider::class,
+//            SpatieLaravelSettingsPluginServiceProvider::class,
+//            SpatieLaravelTranslatablePluginServiceProvider::class,
             SupportServiceProvider::class,
             TablesServiceProvider::class,
             WidgetsServiceProvider::class,
-            SkeletonServiceProvider::class,
+            PermissionServiceProvider::class,
+            FilamentPermissionServiceProvider::class,
+            FilamentPermissionPanelProvider::class,
         ];
     }
 
     public function getEnvironmentSetUp($app)
     {
         config()->set('database.default', 'testing');
+        config()->set('app.key', 'base64:'.base64_encode(Encrypter::generateKey(config('config.app.cipher'))));
+        config()->set('app.debug', true);
 
+        $migration = include __DIR__.'/../vendor/spatie/laravel-permission/database/migrations/create_permission_tables.php.stub';
+        $migration->up();
         /*
-        $migration = include __DIR__.'/../database/migrations/create_skeleton_table.php.stub';
+        $migration = include __DIR__.'/../database/migrations/create_filament-permission_table.php.stub';
         $migration->up();
         */
     }
