@@ -64,7 +64,7 @@ it('can click select all', function () {
     ]));
 });
 
-it('can click_deselect_all', function () {
+it('can click deselect all', function () {
     $permissions = permissions();
     $role = givenRolePermissions(givenRole(), $permissions, 'users', 'roles', 'permissions');
 
