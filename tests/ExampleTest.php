@@ -9,9 +9,10 @@ use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\RoleResource\
 use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\RoleResource\Pages\EditRole;
 use Recca0120\FilamentPermission\Tests\Fixtures\Models\Role;
 use Spatie\Permission\Models\Permission;
-use function Pest\Laravel\{assertDatabaseHas, assertDatabaseMissing};
-use function Pest\Livewire\livewire;
 
+use function Pest\Laravel\assertDatabaseHas;
+use function Pest\Laravel\assertDatabaseMissing;
+use function Pest\Livewire\livewire;
 
 it('can create role', function () {
     $permissions = permissions();
@@ -49,7 +50,6 @@ it('can update role', function () {
     assertDatabaseHas('roles', ['name' => $name, 'guard_name' => $guardName]);
 });
 
-
 it('can click select all', function () {
     $permissions = permissions();
     $role = givenRolePermissions(givenRole(), $permissions, 'users');
@@ -59,7 +59,7 @@ it('can click select all', function () {
     expect(getSelectedPermissions($testable->get('form'))->diff($permissions->pluck('id')))->toBeEmpty();
 
     $testable->call('save');
-    $permissions->each(fn(Permission $permission) => assertDatabaseHas('role_has_permissions', [
+    $permissions->each(fn (Permission $permission) => assertDatabaseHas('role_has_permissions', [
         'role_id' => $role->id, 'permission_id' => $permission->id,
     ]));
 });
@@ -103,8 +103,8 @@ it('can click deselect users permissions and select all should be false', functi
 
     $testable->call('save');
     $permissions
-        ->where(fn(Permission $permission) => Str::startsWith($permission->name, 'users.'))
-        ->each(fn(Permission $permission) => assertDatabaseMissing('role_has_permissions', [
+        ->where(fn (Permission $permission) => Str::startsWith($permission->name, 'users.'))
+        ->each(fn (Permission $permission) => assertDatabaseMissing('role_has_permissions', [
             'role_id' => $role->id, 'permission_id' => $permission->id,
         ]));
 });
@@ -130,7 +130,7 @@ it('click select all user permissions and select all should be true', function (
     });
 
     $testable->call('save');
-    $permissions->each(fn(Permission $permission) => assertDatabaseHas('role_has_permissions', [
+    $permissions->each(fn (Permission $permission) => assertDatabaseHas('role_has_permissions', [
         'role_id' => $role->id, 'permission_id' => $permission->id,
     ]));
 });
@@ -152,14 +152,14 @@ function givenRole(): Role
 function givenPermissions(string $entity): Collection
 {
     return collect(range(0, 4))->map(function ($index) use ($entity) {
-        return Permission::create(['name' => $entity.'.'.$entity.'-'.$index]);
+        return Permission::create(['name' => $entity . '.' . $entity . '-' . $index]);
     });
 }
 
 function getSelectedPermissions(Form $form): Collection
 {
     return getCheckboxLists($form)
-        ->map(fn(CheckboxList $checkboxList) => $checkboxList->getState())
+        ->map(fn (CheckboxList $checkboxList) => $checkboxList->getState())
         ->collapse()
         ->values();
 }
@@ -167,13 +167,13 @@ function getSelectedPermissions(Form $form): Collection
 function getCheckboxLists(Form $form): Collection
 {
     return collect($form->getFlatComponents())
-        ->filter(fn(Component $component) => is_a($component, CheckboxList::class));
+        ->filter(fn (Component $component) => is_a($component, CheckboxList::class));
 }
 
 function getCheckedPermissions(Form $form): Collection
 {
     return getCheckboxLists($form)
-        ->map(fn(CheckboxList $checkboxList) => $checkboxList->getState())
+        ->map(fn (CheckboxList $checkboxList) => $checkboxList->getState())
         ->collapse()
         ->values();
 }

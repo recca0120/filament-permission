@@ -64,22 +64,22 @@ class FilamentPermissionServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         // Asset Registration
-//        FilamentAsset::register(
-//            $this->getAssets(),
-//            $this->getAssetPackageName()
-//        );
-//
-//        FilamentAsset::registerScriptData(
-//            $this->getScriptData(),
-//            $this->getAssetPackageName()
-//        );
+        //        FilamentAsset::register(
+        //            $this->getAssets(),
+        //            $this->getAssetPackageName()
+        //        );
+        //
+        //        FilamentAsset::registerScriptData(
+        //            $this->getScriptData(),
+        //            $this->getAssetPackageName()
+        //        );
 
         // Icon Registration
         FilamentIcon::register($this->getIcons());
 
         // Handle Stubs
         if (app()->runningInConsole()) {
-            foreach (app(Filesystem::class)->files(__DIR__.'/../stubs/') as $file) {
+            foreach (app(Filesystem::class)->files(__DIR__ . '/../stubs/') as $file) {
                 $this->publishes([
                     $file->getRealPath() => base_path("stubs/filament-permission/{$file->getFilename()}"),
                 ], 'filament-permission-stubs');
@@ -102,8 +102,8 @@ class FilamentPermissionServiceProvider extends PackageServiceProvider
     {
         return [
             // AlpineComponent::make('filament-permission', __DIR__ . '/../resources/dist/components/filament-permission.js'),
-            Css::make('filament-permission-styles', __DIR__.'/../resources/dist/filament-permission.css'),
-            Js::make('filament-permission-scripts', __DIR__.'/../resources/dist/filament-permission.js'),
+            Css::make('filament-permission-styles', __DIR__ . '/../resources/dist/filament-permission.css'),
+            Js::make('filament-permission-scripts', __DIR__ . '/../resources/dist/filament-permission.js'),
         ];
     }
 
