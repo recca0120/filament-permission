@@ -9,7 +9,6 @@ use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\RoleResource\
 use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\RoleResource\Pages\EditRole;
 use Recca0120\FilamentPermission\Tests\Fixtures\Models\Role;
 use Spatie\Permission\Models\Permission;
-
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
 use function Pest\Livewire\livewire;
@@ -18,11 +17,9 @@ it('can create role', function () {
     $permissions = permissions();
     $name = 'Admin';
     $guardName = 'web';
-    $group = $permissions->groupBy(function (Permission $permission) {
-        return Str::of($permission->name)->before('.')->value();
-    })->map(function (Collection $permissions) {
-        return $permissions->pluck('id');
-    });
+    $group = $permissions
+        ->groupBy(fn(Permission $permission) => Str::of($permission->name)->before('.')->value())
+        ->map(fn(Collection $permissions) => $permissions->pluck('id'));
 
     $testable = livewire(CreateRole::class)->assertOk();
     $testable
@@ -30,10 +27,11 @@ it('can create role', function () {
         ->call('create')
         ->assertHasNoFormErrors();
 
+    $id = $testable->get('form')->getRecord()->id;
     assertDatabaseHas('roles', ['name' => $name, 'guard_name' => $guardName]);
-    $permissions->each(function (Permission $permission) {
-        assertDatabaseHas('role_has_permissions', ['role_id' => 1, 'permission_id' => $permission->id]);
-    });
+    $permissions->each(fn(Permission $permission) => assertDatabaseHas(
+        'role_has_permissions', ['role_id' => $id, 'permission_id' => $permission->id])
+    );
 });
 
 it('can update role', function () {
@@ -59,7 +57,7 @@ it('can click select all', function () {
     expect(getSelectedPermissions($testable->get('form'))->diff($permissions->pluck('id')))->toBeEmpty();
 
     $testable->call('save');
-    $permissions->each(fn (Permission $permission) => assertDatabaseHas('role_has_permissions', [
+    $permissions->each(fn(Permission $permission) => assertDatabaseHas('role_has_permissions', [
         'role_id' => $role->id, 'permission_id' => $permission->id,
     ]));
 });
@@ -103,8 +101,8 @@ it('can click deselect users permissions and select all should be false', functi
 
     $testable->call('save');
     $permissions
-        ->where(fn (Permission $permission) => Str::startsWith($permission->name, 'users.'))
-        ->each(fn (Permission $permission) => assertDatabaseMissing('role_has_permissions', [
+        ->where(fn(Permission $permission) => Str::startsWith($permission->name, 'users.'))
+        ->each(fn(Permission $permission) => assertDatabaseMissing('role_has_permissions', [
             'role_id' => $role->id, 'permission_id' => $permission->id,
         ]));
 });
@@ -130,7 +128,7 @@ it('click select all user permissions and select all should be true', function (
     });
 
     $testable->call('save');
-    $permissions->each(fn (Permission $permission) => assertDatabaseHas('role_has_permissions', [
+    $permissions->each(fn(Permission $permission) => assertDatabaseHas('role_has_permissions', [
         'role_id' => $role->id, 'permission_id' => $permission->id,
     ]));
 });
@@ -152,14 +150,14 @@ function givenRole(): Role
 function givenPermissions(string $entity): Collection
 {
     return collect(range(0, 4))->map(function ($index) use ($entity) {
-        return Permission::create(['name' => $entity . '.' . $entity . '-' . $index]);
+        return Permission::create(['name' => $entity.'.'.$entity.'-'.$index]);
     });
 }
 
 function getSelectedPermissions(Form $form): Collection
 {
     return getCheckboxLists($form)
-        ->map(fn (CheckboxList $checkboxList) => $checkboxList->getState())
+        ->map(fn(CheckboxList $checkboxList) => $checkboxList->getState())
         ->collapse()
         ->values();
 }
@@ -167,13 +165,13 @@ function getSelectedPermissions(Form $form): Collection
 function getCheckboxLists(Form $form): Collection
 {
     return collect($form->getFlatComponents())
-        ->filter(fn (Component $component) => is_a($component, CheckboxList::class));
+        ->filter(fn(Component $component) => is_a($component, CheckboxList::class));
 }
 
 function getCheckedPermissions(Form $form): Collection
 {
     return getCheckboxLists($form)
-        ->map(fn (CheckboxList $checkboxList) => $checkboxList->getState())
+        ->map(fn(CheckboxList $checkboxList) => $checkboxList->getState())
         ->collapse()
         ->values();
 }
