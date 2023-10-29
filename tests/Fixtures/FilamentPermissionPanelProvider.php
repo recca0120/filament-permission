@@ -15,6 +15,7 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\RoleResource;
+use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\UserResource;
 
 class FilamentPermissionPanelProvider extends PanelProvider
 {
@@ -26,6 +27,7 @@ class FilamentPermissionPanelProvider extends PanelProvider
             ->path('/permission')
             ->resources([
                 RoleResource::class,
+                UserResource::class,
             ])
             ->middleware([
                 EncryptCookies::class,

@@ -15,7 +15,10 @@ use Filament\Support\SupportServiceProvider;
 use Filament\Tables\TablesServiceProvider;
 use Filament\Widgets\WidgetsServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Encryption\Encrypter;
+use Illuminate\Support\Facades\Schema;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Recca0120\FilamentPermission\FilamentPermissionServiceProvider;
@@ -30,7 +33,7 @@ class TestCase extends Orchestra
         parent::setUp();
 
         Factory::guessFactoryNamesUsing(function (string $modelName) {
-            return 'Recca0120\\FilamentPermission\\Database\\Factories\\' . class_basename($modelName) . 'Factory';
+            return 'Recca0120\\FilamentPermission\\Database\\Factories\\'.class_basename($modelName).'Factory';
         });
     }
 
@@ -60,10 +63,31 @@ class TestCase extends Orchestra
     public function getEnvironmentSetUp($app)
     {
         config()->set('database.default', 'testing');
-        config()->set('app.key', 'base64:' . base64_encode(Encrypter::generateKey(config('config.app.cipher'))));
+        config()->set('app.key', 'base64:'.base64_encode(Encrypter::generateKey(config('config.app.cipher'))));
         config()->set('app.debug', true);
 
-        $migration = include __DIR__ . '/../vendor/spatie/laravel-permission/database/migrations/create_permission_tables.php.stub';
+        $migration = new class extends Migration {
+            public function up(): void
+            {
+                Schema::create('users', function (Blueprint $table) {
+                    $table->id();
+                    $table->string('name');
+                    $table->string('email')->unique();
+                    $table->timestamp('email_verified_at')->nullable();
+                    $table->string('password');
+                    $table->rememberToken();
+                    $table->timestamps();
+                });
+            }
+
+            public function down(): void
+            {
+                Schema::dropIfExists('users');
+            }
+        };
+        $migration->up();
+
+        $migration = include __DIR__.'/../vendor/spatie/laravel-permission/database/migrations/create_permission_tables.php.stub';
         $migration->up();
         /*
         $migration = include __DIR__.'/../database/migrations/create_filament-permission_table.php.stub';
