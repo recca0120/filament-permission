@@ -1,7 +1,9 @@
 <?php
 
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Form;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\UserResource\Pages\CreateUser;
 use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\UserResource\Pages\EditUser;
 use Recca0120\FilamentPermission\Tests\Fixtures\Models\Role;
@@ -85,3 +87,58 @@ it('can click deselect all', function () {
     $testable->call('save');
     assertDatabaseMissing('model_has_permissions', ['model_type' => User::class, 'model_id' => $user->id]);
 });
+
+it('can click deselect users permissions and select all should be false', function () {
+    $permissions = permissions();
+    $user = givenRolePermissions(givenUser(), $permissions, 'users', 'roles', 'permissions');
+
+    $testable = livewire(EditUser::class, ['record' => $user->id])->assertOk();
+
+    /** @var Form $form */
+    $form = $testable->get('form');
+    expect($form->getState()['select_all'])->toBeTrue();
+
+    tap(getCheckboxLists($form)->first(function (CheckboxList $checkboxList) {
+        return Str::endsWith($checkboxList->getName(), 'users');
+    }), static function (CheckboxList $checkboxList) use ($testable, $form) {
+        $options = [];
+        $checkboxList->state($options)->callAfterStateUpdated();
+        expect($form->getState()['select_all'])->toBeFalse();
+
+        $testable->fillForm(['permissions.users' => $options]);
+    });
+
+    $testable->call('save');
+    $permissions
+        ->where(fn(Permission $permission) => Str::startsWith($permission->name, 'users.'))
+        ->each(fn(Permission $permission) => assertDatabaseMissing('model_has_permissions', [
+            'model_type' => User::class, 'model_id' => $user->id, 'permission_id' => $permission->id,
+        ]));
+});
+
+it('click select all user permissions and select all should be true', function () {
+    $permissions = permissions();
+    $user = givenRolePermissions(givenUser(), $permissions, 'roles', 'permissions');
+
+    $testable = livewire(EditUser::class, ['record' => $user->id])->assertOk();
+
+    /** @var Form $form */
+    $form = $testable->get('form');
+    expect($form->getState()['select_all'])->toBeFalse();
+
+    tap(getCheckboxLists($form)->first(function (CheckboxList $checkboxList) {
+        return Str::endsWith($checkboxList->getName(), 'users');
+    }), static function (CheckboxList $checkboxList) use ($testable, $form) {
+        $options = array_keys($checkboxList->getOptions());
+        $checkboxList->state($options)->callAfterStateUpdated();
+        expect($form->getState()['select_all'])->toBeTrue();
+
+        $testable->fillForm(['permissions.users' => $options]);
+    });
+
+    $testable->call('save');
+    $permissions->each(fn(Permission $permission) => assertDatabaseHas('model_has_permissions', [
+        'model_type' => User::class, 'model_id' => $user->id, 'permission_id' => $permission->id,
+    ]));
+});
+
