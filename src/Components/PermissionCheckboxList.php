@@ -2,43 +2,24 @@
 
 namespace Recca0120\FilamentPermission\Components;
 
+use Closure;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Form;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Recca0120\FilamentPermission\FilamentPermission;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Traits\HasPermissions;
 use Spatie\Permission\Traits\HasRoles;
 
 class PermissionCheckboxList extends Field
 {
     protected string $view = 'filament-forms::components.grid';
-
-    public static function isAll(Form $form, string $name): bool
-    {
-        return self::checkboxLists($form, $name)->flatMap(function (CheckboxList $checkboxList) {
-            return collect($checkboxList->getEnabledOptions())->keys()->diff($checkboxList->getState());
-        })->isEmpty();
-    }
-
-    public static function permissions(bool|array|Collection $state): array
-    {
-        if (is_bool($state)) {
-            $permissions = $state ? Permission::all() : collect();
-        } elseif (is_a($state, Collection::class) && is_a($state->first(), Permission::class)) {
-            $permissions = $state;
-        } else {
-            $permissions = Permission::query()->whereIn('id', $state)->get();
-        }
-
-        return self::permissionGroupByPrefix($permissions)
-            ->map(fn(Collection $group) => $group->pluck('id'))
-            ->toArray();
-    }
+    private ?Closure $toggleAllCheckboxUsing = null;
 
     protected function setUp(): void
     {
@@ -50,7 +31,7 @@ class PermissionCheckboxList extends Field
         $permissions = Permission::query()->get();
 
         $this->schema(
-            self::permissionGroupByPrefix($permissions)
+            FilamentPermission::permissionGroupByPrefix($permissions)
                 ->map(function (Collection $permissions) {
                     return $permissions->keyBy('id')->map(function (Permission $permission) {
                         return Str::of($permission->name)->after('.')->headline()->value();
@@ -69,7 +50,7 @@ class PermissionCheckboxList extends Field
                                 ->deselectAllAction(fn(Action $action, CheckboxList $component) => $action
                                     ->livewireClickHandlerEnabled()
                                     ->action(fn() => $this->toggleCheckboxList($component, false, true)))
-                                ->afterStateUpdated(fn($state) => $this->updateSelectAll())
+                                ->afterStateUpdated(fn() => $this->callToggleAllCheckboxUsing())
                                 ->bulkToggleable()
                                 ->gridDirection('row')
                                 ->columns(['sm' => 2, 'lg' => 3]),
@@ -80,87 +61,60 @@ class PermissionCheckboxList extends Field
                 ->toArray()
         );
 
-        $this->mutateDehydratedStateUsing(function (Component $component) {
-            return collect($component->getState())->collapse()->values()->toArray();
-        });
-
         $this->afterStateHydrated(function (Component $component, ?Model $record) {
-            if (! $record) {
-                return;
+            if ($record) {
+                $this->callToggleAllCheckboxUsing();
             }
-
-            $state = self::checkboxLists($this->getForm(), $this->getName())
-                ->flatMap(fn(CheckboxList $checkboxList) => array_keys($checkboxList->getEnabledOptions()))
-                ->diff($record->permissions->pluck('id'))
-                ->isEmpty();
-
-            $this->selectAll()->state($state);
         });
 
-        $this->saveRelationshipsUsing(function (Model $record, ?array $state) {
-            $currentState = collect($state)->collapse();
-            if (is_a($record, HasRoles::class)) {
-                $currentState = $currentState->diff($record->getPermissionsViaRoles()->pluck('id'));
-            }
-            $record->syncPermissions($currentState->values()->toArray());
+        $this->saveRelationshipsUsing(function (/** @var HasPermissions $record */ Model $record, ?array $state) {
+            $record->syncPermissions(value(static function (Collection $state) use ($record) {
+                return in_array(HasRoles::class, class_uses_recursive($record), true)
+                    ? $state->diff($record->getPermissionsViaRoles()->pluck('id'))
+                    : $state;
+            }, collect($state ?? [])->collapse()->map(fn(int $id) => $id))->values());
         });
 
         $this->loadStateFromRelationshipsUsing(function (Component $component, ?Model $record) {
-            if (! $record) {
-                return $component->state([]);
-            }
-
-            $state = self::permissionGroupByPrefix($record->getAllPermissions())
+            return $component->state(! $record ? [] : FilamentPermission::permissionGroupByPrefix($record->getAllPermissions())
                 ->map(fn(Collection $permissions) => $permissions->pluck('id'))
-                ->toArray();
-
-            return $component->state($state);
+                ->toArray());
         });
     }
 
-    private function toggleCheckboxList(CheckboxList $component, bool $state, $update = false): array
+    private function toggleCheckboxList(CheckboxList $component, bool $state): void
     {
         $currentState = $state ? array_keys($component->getEnabledOptions()) : [];
         $component->state($currentState);
-        if ($update === true) {
-            $this->updateSelectAll();
+        $this->callToggleAllCheckboxUsing();
+    }
+
+    public function toggleAllCheckbox(?Closure $callback): static
+    {
+        $this->toggleAllCheckboxUsing = $callback;
+
+        return $this;
+    }
+
+    public function callToggleAllCheckboxUsing(): void
+    {
+        if ($this->toggleAllCheckboxUsing) {
+            $this->evaluate($this->toggleAllCheckboxUsing, [
+                'state' => $this->checkIfAllCheckboxesAreChecked(),
+            ]);
         }
-
-        return $currentState;
     }
 
-    private function updateSelectAll(): void
+    private function checkboxLists(): Collection
     {
-        $this->selectAll()->state(self::isAll($this->getForm(), $this->getName()));
+        return collect($this->getChildComponentContainer()->getFlatComponents())
+            ->filter(fn(Component $component) => is_a($component, CheckboxList::class));
     }
 
-    private function selectAll(): Component
+    private function checkIfAllCheckboxesAreChecked(): bool
     {
-        return self::getField($this->getForm(), 'select_all');
-    }
-
-    private function getForm(): Form
-    {
-        return $this->getLivewire()->getForm('form');
-    }
-
-    private static function permissionGroupByPrefix(Collection $permissions): Collection
-    {
-        return $permissions->groupBy(function (Permission $permission) {
-            return Str::of($permission->name)->before('.')->value();
-        });
-    }
-
-    private static function checkboxLists(Form $form, string $name): Collection
-    {
-        return collect(self::getField($form, $name)->getChildComponents())
-            ->flatMap(fn(Component $component) => $component->getChildComponents());
-    }
-
-    private static function getField(Form $form, string $name): Component
-    {
-        return collect($form->getFlatComponents())
-            ->filter(fn(Component $component) => is_a($component, Field::class))
-            ->first(fn(Field $select) => $select->getName() === $name);
+        return $this->checkboxLists()->flatMap(function (CheckboxList $checkboxList) {
+            return collect($checkboxList->getEnabledOptions())->keys()->diff($checkboxList->getState());
+        })->isEmpty();
     }
 }

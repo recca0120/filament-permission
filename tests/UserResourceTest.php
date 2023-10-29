@@ -59,7 +59,7 @@ test('can update user', function () {
 
 it('can click select all', function () {
     $permissions = permissions();
-    $user = givenRolePermissions(givenUser(), $permissions, 'users');
+    $user = givenUserOrRolePermissions(givenUser(), $permissions, 'users');
 
     $testable = livewire(EditUser::class, ['record' => $user->id])->assertOk();
     $testable->fillForm(['select_all' => true]);
@@ -73,7 +73,7 @@ it('can click select all', function () {
 
 it('can click deselect all', function () {
     $permissions = permissions();
-    $user = givenRolePermissions(givenUser(), $permissions, 'users', 'roles', 'permissions');
+    $user = givenUserOrRolePermissions(givenUser(), $permissions, 'users', 'roles', 'permissions');
 
     $testable = livewire(EditUser::class, ['record' => $user->id])->assertOk();
 
@@ -90,7 +90,7 @@ it('can click deselect all', function () {
 
 it('can click deselect users permissions and select all should be false', function () {
     $permissions = permissions();
-    $user = givenRolePermissions(givenUser(), $permissions, 'users', 'roles', 'permissions');
+    $user = givenUserOrRolePermissions(givenUser(), $permissions, 'users', 'roles', 'permissions');
 
     $testable = livewire(EditUser::class, ['record' => $user->id])->assertOk();
 
@@ -118,7 +118,7 @@ it('can click deselect users permissions and select all should be false', functi
 
 it('click select all user permissions and select all should be true', function () {
     $permissions = permissions();
-    $user = givenRolePermissions(givenUser(), $permissions, 'roles', 'permissions');
+    $user = givenUserOrRolePermissions(givenUser(), $permissions, 'roles', 'permissions');
 
     $testable = livewire(EditUser::class, ['record' => $user->id])->assertOk();
 
@@ -142,3 +142,94 @@ it('click select all user permissions and select all should be true', function (
     ]));
 });
 
+it('add user role', function () {
+    $permissions = permissions();
+    $user = givenUserOrRolePermissions(givenUser(), $permissions, 'permissions');
+    $role = givenUserOrRolePermissions(givenRole(), $permissions, 'users');
+
+    $testable = livewire(EditUser::class, ['record' => $user->id])->assertOk();
+
+    $testable
+        ->fillForm(['roles' => [$role->id]])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    assertDatabaseHas('model_has_roles', [
+        'model_type' => User::class, 'model_id' => $user->id, 'role_id' => $role->id,
+    ]);
+});
+
+it('add user and permission roles', function () {
+    $permissions = permissions();
+    $user = givenUserOrRolePermissions(givenUser(), $permissions, 'permissions');
+    $userRole = givenUserOrRolePermissions(givenRole(), $permissions, 'user');
+    $permissionRole = givenUserOrRolePermissions(givenRole(), $permissions, 'permissions');
+
+    $testable = livewire(EditUser::class, ['record' => $user->id])->assertOk();
+
+    $testable
+        ->fillForm(['roles' => [$userRole->id, $permissionRole->id]])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    assertDatabaseHas('model_has_roles', [
+        'model_type' => User::class, 'model_id' => $user->id, 'role_id' => $userRole->id,
+    ]);
+    assertDatabaseHas('model_has_roles', [
+        'model_type' => User::class, 'model_id' => $user->id, 'role_id' => $permissionRole->id,
+    ]);
+    $permissions->filter(function (Permission $permission) {
+        return Str::startsWith($permission->name, 'permissions');
+    })->each(function (Permission $permission) use ($user) {
+        assertDatabaseMissing('model_has_permissions', [
+            'model_type' => User::class, 'model_id' => $user->id, 'permission_id' => $permission->id,
+        ]);
+    });
+});
+
+it('toggle select all when role selected', function () {
+    $permissions = permissions();
+    $user = givenUser();
+    $userRole = givenUserOrRolePermissions(givenRole(), $permissions, 'users');
+    $otherRole = givenUserOrRolePermissions(givenRole(), $permissions, 'roles', 'permissions');
+
+    $testable = livewire(EditUser::class, ['record' => $user->id])->assertOk();
+
+    $testable->fillForm(['roles' => [$userRole->id, $otherRole->id]]);
+    /** @var Form $form */
+    $form = $testable->get('form');
+    expect($form->getState()['select_all'])->toBeTrue();
+
+    $testable->fillForm(['roles' => []]);
+    /** @var Form $form */
+    $form = $testable->get('form');
+    expect($form->getState()['select_all'])->toBeFalse();
+});
+
+it('keep users permissions', function () {
+    $permissions = permissions();
+    $userRole = givenUserOrRolePermissions(givenRole(), $permissions, 'users');
+    $user = givenUser();
+    $user->assignRole($userRole);
+
+    $testable = livewire(EditUser::class, ['record' => $user->id])->assertOk();
+
+    $testable
+        ->fillForm(['permissions' => []])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    assertDatabaseHas('model_has_roles', [
+        'model_type' => User::class, 'model_id' => $user->id, 'role_id' => $userRole->id,
+    ]);
+
+    $expected = $user->getAllPermissions()->pluck('id')->values()->sort()->toArray();
+    $actual = $permissions
+        ->filter(fn(Permission $permission) => Str::startsWith($permission->name, 'users'))
+        ->pluck('id')
+        ->values()
+        ->sort()
+        ->toArray();
+
+    expect($expected)->toMatchArray($actual);
+});

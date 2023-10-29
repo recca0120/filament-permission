@@ -50,7 +50,7 @@ it('can update role', function () {
 
 it('can click select all', function () {
     $permissions = permissions();
-    $role = givenRolePermissions(givenRole(), $permissions, 'users');
+    $role = givenUserOrRolePermissions(givenRole(), $permissions, 'users');
 
     $testable = livewire(EditRole::class, ['record' => $role->id])->assertOk();
     $testable->fillForm(['select_all' => true]);
@@ -64,7 +64,7 @@ it('can click select all', function () {
 
 it('can click deselect all', function () {
     $permissions = permissions();
-    $role = givenRolePermissions(givenRole(), $permissions, 'users', 'roles', 'permissions');
+    $role = givenUserOrRolePermissions(givenRole(), $permissions, 'users', 'roles', 'permissions');
 
     $testable = livewire(EditRole::class, ['record' => $role->id])->assertOk();
 
@@ -81,7 +81,7 @@ it('can click deselect all', function () {
 
 it('can click deselect users permissions and select all should be false', function () {
     $permissions = permissions();
-    $role = givenRolePermissions(givenRole(), $permissions, 'users', 'roles', 'permissions');
+    $role = givenUserOrRolePermissions(givenRole(), $permissions, 'users', 'roles', 'permissions');
 
     $testable = livewire(EditRole::class, ['record' => $role->id])->assertOk();
 
@@ -109,7 +109,7 @@ it('can click deselect users permissions and select all should be false', functi
 
 it('click select all user permissions and select all should be true', function () {
     $permissions = permissions();
-    $role = givenRolePermissions(givenRole(), $permissions, 'roles', 'permissions');
+    $role = givenUserOrRolePermissions(givenRole(), $permissions, 'roles', 'permissions');
 
     $testable = livewire(EditRole::class, ['record' => $role->id])->assertOk();
 

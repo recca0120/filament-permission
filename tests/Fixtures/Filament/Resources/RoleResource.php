@@ -7,7 +7,9 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Recca0120\FilamentPermission\Checker;
 use Recca0120\FilamentPermission\Components\PermissionCheckboxList;
+use Recca0120\FilamentPermission\Facades\FilamentPermission;
 use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\RoleResource\Pages\CreateRole;
 use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\RoleResource\Pages\EditRole;
 use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\RoleResource\Pages\ListRoles;
@@ -30,7 +32,7 @@ class RoleResource extends Resource
                         Forms\Components\Section::make()
                             ->schema([
                                 Forms\Components\TextInput::make('name')
-                                    ->readOnly(fn (?Role $record) => $record?->name === 'Super Admin')
+                                    ->readOnly(fn(?Role $record) => $record?->name === 'Super Admin')
                                     ->required(),
                                 Forms\Components\Select::make('guard_name')
                                     ->options(function () {
@@ -46,11 +48,13 @@ class RoleResource extends Resource
                                     ->offIcon('heroicon-s-shield-exclamation')
                                     ->live()
                                     ->afterStateUpdated(function (Forms\Set $set, bool $state) {
-                                        $set('permissions', PermissionCheckboxList::permissions($state));
+                                        $set('permissions', FilamentPermission::toggleAll($state));
                                     }),
                             ]),
                     ]),
-                PermissionCheckboxList::make('permissions')->columns(['sm' => 2, 'lg' => 3]),
+                PermissionCheckboxList::make('permissions')
+                    ->toggleAllCheckbox(fn(Forms\Set $set, bool $state) => $set('select_all', $state))
+                    ->columns(['sm' => 2, 'lg' => 3]),
             ]);
     }
 
@@ -59,7 +63,7 @@ class RoleResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->description(fn (Role $record) => $record->guard_name ?: 'web'),
+                    ->description(fn(Role $record) => $record->guard_name ?: 'web'),
                 Tables\Columns\TextColumn::make('permissions_count')->counts('permissions'),
                 Tables\Columns\TextColumn::make('users_count')->counts('users'),
             ])
@@ -78,7 +82,7 @@ class RoleResource extends Resource
             ->emptyStateActions([
                 Tables\Actions\CreateAction::make(),
             ])
-            ->checkIfRecordIsSelectableUsing(fn (Role $record) => RoleResource::canDelete($record))
+            ->checkIfRecordIsSelectableUsing(fn(Role $record) => RoleResource::canDelete($record))
             ->defaultSort('id')
             ->paginated(false);
     }

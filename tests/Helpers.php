@@ -57,7 +57,7 @@ function getCheckedPermissions(Form $form): Collection
         ->values();
 }
 
-function givenRolePermissions(User|Role $userOrRole, Collection $permissions, string ...$names): User|Role
+function givenUserOrRolePermissions(User|Role $userOrRole, Collection $permissions, string ...$names): User|Role
 {
     $allowed = $permissions->filter(function (Permission $permission) use ($names) {
         $prefix = Str::of($permission->name)->before('.')->value();

@@ -2,20 +2,18 @@
 
 namespace Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources;
 
-use Recca0120\FilamentPermission\Tests\Fixtures\Models\Role;
-use Recca0120\FilamentPermission\Tests\Fixtures\Models\User;
-use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Query\Builder as QueryBuilder;
+use Recca0120\FilamentPermission\Checker;
 use Recca0120\FilamentPermission\Components\PermissionCheckboxList;
+use Recca0120\FilamentPermission\Facades\FilamentPermission;
 use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\UserResource\Pages\CreateUser;
 use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\UserResource\Pages\EditUser;
 use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\UserResource\Pages\ListUsers;
+use Recca0120\FilamentPermission\Tests\Fixtures\Models\User;
 
 class UserResource extends Resource
 {
@@ -45,15 +43,9 @@ class UserResource extends Resource
                             ->multiple()
                             ->preload()
                             ->live()
-                            ->afterStateUpdated(function (CreateUser|EditUser $livewire, Forms\Set $set, $state) {
-                                $permissions = Role::query()
-                                    ->whereIn('id', $state)
-                                    ->get()
-                                    ->flatMap(fn(Role $role) => $role->getAllPermissions())
-                                    ->unique();
-
-                                $set('permissions', PermissionCheckboxList::permissions($permissions));
-                                $set('select_all', PermissionCheckboxList::isAll($livewire->form, 'permissions'));
+                            ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                $set('permissions', FilamentPermission::toggleRoles($state));
+                                $set('select_all', FilamentPermission::checkAllCheckboxesAreChecked($get('permissions')));
                             }),
                         Forms\Components\Toggle::make('select_all')
                             ->label('Select All')
@@ -62,10 +54,12 @@ class UserResource extends Resource
                             ->columnSpanFull()
                             ->live()
                             ->afterStateUpdated(function (Forms\Set $set, bool $state) {
-                                $set('permissions', PermissionCheckboxList::permissions($state));
+                                $set('permissions', FilamentPermission::toggleAll($state));
                             }),
                     ]),
-                PermissionCheckboxList::make('permissions')->columns(['sm' => 2, 'lg' => 3]),
+                PermissionCheckboxList::make('permissions')
+                    ->toggleAllCheckbox(fn(Forms\Set $set, bool $state) => $set('select_all', $state))
+                    ->columns(['sm' => 2, 'lg' => 3]),
             ]);
     }
 
