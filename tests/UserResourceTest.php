@@ -8,6 +8,7 @@ use Recca0120\FilamentPermission\Tests\Fixtures\Models\Role;
 use Recca0120\FilamentPermission\Tests\Fixtures\Models\User;
 use Spatie\Permission\Models\Permission;
 use function Pest\Laravel\assertDatabaseHas;
+use function Pest\Laravel\assertDatabaseMissing;
 use function Pest\Livewire\livewire;
 
 beforeEach(fn() => Role::create(['name' => fake()->name(), 'guard_name' => 'web']));
@@ -66,4 +67,21 @@ it('can click select all', function () {
     $permissions->each(fn(Permission $permission) => assertDatabaseHas('model_has_permissions', [
         'model_type' => User::class, 'model_id' => $user->id, 'permission_id' => $permission->id,
     ]));
+});
+
+it('can click deselect all', function () {
+    $permissions = permissions();
+    $user = givenRolePermissions(givenUser(), $permissions, 'users', 'roles', 'permissions');
+
+    $testable = livewire(EditUser::class, ['record' => $user->id])->assertOk();
+
+    /** @var Form $form */
+    $form = $testable->get('form');
+    expect($form->getState()['select_all'])->toBeTrue();
+
+    $testable->fillForm(['select_all' => false]);
+    expect(getCheckedPermissions($testable->get('form'))->intersect($permissions->pluck('id')))->toBeEmpty();
+
+    $testable->call('save');
+    assertDatabaseMissing('model_has_permissions', ['model_type' => User::class, 'model_id' => $user->id]);
 });
