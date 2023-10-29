@@ -6,6 +6,7 @@ use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\UserResource\
 use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\UserResource\Pages\EditUser;
 use Recca0120\FilamentPermission\Tests\Fixtures\Models\Role;
 use Recca0120\FilamentPermission\Tests\Fixtures\Models\User;
+use Spatie\Permission\Models\Permission;
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Livewire\livewire;
 
@@ -51,4 +52,18 @@ test('can update user', function () {
         ->assertHasNoFormErrors();
 
     assertDatabaseHas('users', ['email' => $email, 'name' => $name]);
+});
+
+it('can click select all', function () {
+    $permissions = permissions();
+    $user = givenRolePermissions(givenUser(), $permissions, 'users');
+
+    $testable = livewire(EditUser::class, ['record' => $user->id])->assertOk();
+    $testable->fillForm(['select_all' => true]);
+    expect(getSelectedPermissions($testable->get('form'))->diff($permissions->pluck('id')))->toBeEmpty();
+
+    $testable->call('save');
+    $permissions->each(fn(Permission $permission) => assertDatabaseHas('model_has_permissions', [
+        'model_type' => User::class, 'model_id' => $user->id, 'permission_id' => $permission->id,
+    ]));
 });

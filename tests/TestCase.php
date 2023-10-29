@@ -23,6 +23,7 @@ use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Recca0120\FilamentPermission\FilamentPermissionServiceProvider;
 use Recca0120\FilamentPermission\Tests\Fixtures\FilamentPermissionPanelProvider;
+use Recca0120\FilamentPermission\Tests\Fixtures\Models\User;
 use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
 use Spatie\Permission\PermissionServiceProvider;
 
@@ -65,6 +66,7 @@ class TestCase extends Orchestra
         config()->set('database.default', 'testing');
         config()->set('app.key', 'base64:'.base64_encode(Encrypter::generateKey(config('config.app.cipher'))));
         config()->set('app.debug', true);
+        config()->set('auth.providers.users.model', User::class);
 
         $migration = new class extends Migration {
             public function up(): void
