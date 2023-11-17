@@ -31,14 +31,14 @@ function givenRole(): Role
 function givenPermissions(string $entity): Collection
 {
     return collect(range(0, 4))->map(function ($index) use ($entity) {
-        return Permission::create(['name' => $entity.'.'.$entity.'-'.$index, 'guard_name' => 'web']);
+        return Permission::create(['name' => $entity . '.' . $entity . '-' . $index, 'guard_name' => 'web']);
     });
 }
 
 function getSelectedPermissions(Form $form): Collection
 {
     return getCheckboxLists($form)
-        ->map(fn(CheckboxList $checkboxList) => $checkboxList->getState())
+        ->map(fn (CheckboxList $checkboxList) => $checkboxList->getState())
         ->collapse()
         ->values();
 }
@@ -46,18 +46,18 @@ function getSelectedPermissions(Form $form): Collection
 function getCheckboxLists(Form $form): Collection
 {
     return collect($form->getFlatComponents())
-        ->filter(fn(Component $component) => is_a($component, CheckboxList::class));
+        ->filter(fn (Component $component) => is_a($component, CheckboxList::class));
 }
 
 function getCheckedPermissions(Form $form): Collection
 {
     return getCheckboxLists($form)
-        ->map(fn(CheckboxList $checkboxList) => $checkboxList->getState())
+        ->map(fn (CheckboxList $checkboxList) => $checkboxList->getState())
         ->collapse()
         ->values();
 }
 
-function givenUserOrRolePermissions(User|Role $userOrRole, Collection $permissions, string ...$names): User|Role
+function givenUserOrRolePermissions(User | Role $userOrRole, Collection $permissions, string ...$names): User | Role
 {
     $allowed = $permissions->filter(function (Permission $permission) use ($names) {
         $prefix = Str::of($permission->name)->before('.')->value();

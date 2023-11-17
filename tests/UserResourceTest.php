@@ -9,11 +9,12 @@ use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\UserResource\
 use Recca0120\FilamentPermission\Tests\Fixtures\Models\Role;
 use Recca0120\FilamentPermission\Tests\Fixtures\Models\User;
 use Spatie\Permission\Models\Permission;
+
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
 use function Pest\Livewire\livewire;
 
-beforeEach(fn() => Role::create(['name' => fake()->name(), 'guard_name' => 'web']));
+beforeEach(fn () => Role::create(['name' => fake()->name(), 'guard_name' => 'web']));
 
 test('can create user', function () {
     $testable = livewire(CreateUser::class)->assertOk();
@@ -66,7 +67,7 @@ it('can click select all', function () {
     expect(getSelectedPermissions($testable->get('form'))->diff($permissions->pluck('id')))->toBeEmpty();
 
     $testable->call('save');
-    $permissions->each(fn(Permission $permission) => assertDatabaseHas('model_has_permissions', [
+    $permissions->each(fn (Permission $permission) => assertDatabaseHas('model_has_permissions', [
         'model_type' => User::class, 'model_id' => $user->id, 'permission_id' => $permission->id,
     ]));
 });
@@ -110,8 +111,8 @@ it('can click deselect users permissions and select all should be false', functi
 
     $testable->call('save');
     $permissions
-        ->where(fn(Permission $permission) => Str::startsWith($permission->name, 'users.'))
-        ->each(fn(Permission $permission) => assertDatabaseMissing('model_has_permissions', [
+        ->where(fn (Permission $permission) => Str::startsWith($permission->name, 'users.'))
+        ->each(fn (Permission $permission) => assertDatabaseMissing('model_has_permissions', [
             'model_type' => User::class, 'model_id' => $user->id, 'permission_id' => $permission->id,
         ]));
 });
@@ -137,7 +138,7 @@ it('click select all user permissions and select all should be true', function (
     });
 
     $testable->call('save');
-    $permissions->each(fn(Permission $permission) => assertDatabaseHas('model_has_permissions', [
+    $permissions->each(fn (Permission $permission) => assertDatabaseHas('model_has_permissions', [
         'model_type' => User::class, 'model_id' => $user->id, 'permission_id' => $permission->id,
     ]));
 });
@@ -225,7 +226,7 @@ it('keep users permissions', function () {
 
     $expected = $user->getAllPermissions()->pluck('id')->values()->sort()->toArray();
     $actual = $permissions
-        ->filter(fn(Permission $permission) => Str::startsWith($permission->name, 'users'))
+        ->filter(fn (Permission $permission) => Str::startsWith($permission->name, 'users'))
         ->pluck('id')
         ->values()
         ->sort()

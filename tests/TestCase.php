@@ -34,7 +34,7 @@ class TestCase extends Orchestra
         parent::setUp();
 
         Factory::guessFactoryNamesUsing(function (string $modelName) {
-            return 'Recca0120\\FilamentPermission\\Database\\Factories\\'.class_basename($modelName).'Factory';
+            return 'Recca0120\\FilamentPermission\\Database\\Factories\\' . class_basename($modelName) . 'Factory';
         });
     }
 
@@ -64,11 +64,12 @@ class TestCase extends Orchestra
     public function getEnvironmentSetUp($app)
     {
         config()->set('database.default', 'testing');
-        config()->set('app.key', 'base64:'.base64_encode(Encrypter::generateKey(config('config.app.cipher'))));
+        config()->set('app.key', 'base64:' . base64_encode(Encrypter::generateKey(config('config.app.cipher'))));
         config()->set('app.debug', true);
         config()->set('auth.providers.users.model', User::class);
 
-        $migration = new class extends Migration {
+        $migration = new class extends Migration
+        {
             public function up(): void
             {
                 Schema::create('users', function (Blueprint $table) {
@@ -89,7 +90,7 @@ class TestCase extends Orchestra
         };
         $migration->up();
 
-        $migration = include __DIR__.'/../vendor/spatie/laravel-permission/database/migrations/create_permission_tables.php.stub';
+        $migration = include __DIR__ . '/../vendor/spatie/laravel-permission/database/migrations/create_permission_tables.php.stub';
         $migration->up();
         /*
         $migration = include __DIR__.'/../database/migrations/create_filament-permission_table.php.stub';

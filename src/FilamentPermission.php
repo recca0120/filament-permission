@@ -34,7 +34,7 @@ class FilamentPermission
         $permissions = $state ? $this->getCachedAllPermissions() : collect();
 
         return self::permissionGroupByPrefix($permissions)
-            ->map(fn(BaseCollection $group) => $group->pluck('id'))
+            ->map(fn (BaseCollection $group) => $group->pluck('id'))
             ->toArray();
     }
 

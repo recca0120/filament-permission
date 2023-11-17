@@ -7,7 +7,6 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Recca0120\FilamentPermission\Checker;
 use Recca0120\FilamentPermission\Components\PermissionCheckboxList;
 use Recca0120\FilamentPermission\Facades\FilamentPermission;
 use Recca0120\FilamentPermission\Tests\Fixtures\Filament\Resources\UserResource\Pages\CreateUser;
@@ -36,8 +35,8 @@ class UserResource extends Resource
                             ->required(),
                         Forms\Components\TextInput::make('password')
                             ->password()
-                            ->required(static fn(string $context) => $context === 'create')
-                            ->dehydrated(fn($state) => filled($state)),
+                            ->required(static fn (string $context) => $context === 'create')
+                            ->dehydrated(fn ($state) => filled($state)),
                         Forms\Components\Select::make('roles')
                             ->relationship(name: 'roles', titleAttribute: 'name')
                             ->multiple()
@@ -58,7 +57,7 @@ class UserResource extends Resource
                             }),
                     ]),
                 PermissionCheckboxList::make('permissions')
-                    ->toggleAllCheckbox(fn(Forms\Set $set, bool $state) => $set('select_all', $state))
+                    ->toggleAllCheckbox(fn (Forms\Set $set, bool $state) => $set('select_all', $state))
                     ->columns(['sm' => 2, 'lg' => 3]),
             ]);
     }

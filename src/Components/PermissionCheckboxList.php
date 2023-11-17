@@ -20,6 +20,7 @@ use Spatie\Permission\Traits\HasRoles;
 class PermissionCheckboxList extends Field
 {
     protected string $view = 'filament-forms::components.grid';
+
     private ?Closure $toggleAllCheckboxUsing = null;
 
     protected function setUp(): void
@@ -33,23 +34,23 @@ class PermissionCheckboxList extends Field
 
         $this->schema(
             FilamentPermission::permissionGroupByPrefix($permissions)
-                ->map(fn(Collection $permissions) => $permissions
+                ->map(fn (Collection $permissions) => $permissions
                     ->keyBy('id')
-                    ->map(fn($permission) => $this->translate('labels', Str::after($permission->name, '.'))))
+                    ->map(fn ($permission) => $this->translate('labels', Str::after($permission->name, '.'))))
                 ->map(function (Collection $options, string $entity) {
-                    return Section::make(fn() => $this->translate('entities', $entity))
+                    return Section::make(fn () => $this->translate('entities', $entity))
                         ->compact()
                         ->schema([
                             CheckboxList::make($entity)->label('')
                                 ->options($options)
                                 ->live()
-                                ->selectAllAction(fn(Action $action, CheckboxList $component) => $action
+                                ->selectAllAction(fn (Action $action, CheckboxList $component) => $action
                                     ->livewireClickHandlerEnabled()
-                                    ->action(fn() => $this->toggleCheckboxList($component, true, true)))
-                                ->deselectAllAction(fn(Action $action, CheckboxList $component) => $action
+                                    ->action(fn () => $this->toggleCheckboxList($component, true, true)))
+                                ->deselectAllAction(fn (Action $action, CheckboxList $component) => $action
                                     ->livewireClickHandlerEnabled()
-                                    ->action(fn() => $this->toggleCheckboxList($component, false, true)))
-                                ->afterStateUpdated(fn() => $this->callToggleAllCheckboxUsing())
+                                    ->action(fn () => $this->toggleCheckboxList($component, false, true)))
+                                ->afterStateUpdated(fn () => $this->callToggleAllCheckboxUsing())
                                 ->bulkToggleable()
                                 ->gridDirection('row')
                                 ->columns(['sm' => 2, 'lg' => 3]),
@@ -71,12 +72,12 @@ class PermissionCheckboxList extends Field
                 return in_array(HasRoles::class, class_uses_recursive($record), true)
                     ? $state->diff($record->getPermissionsViaRoles()->pluck('id'))
                     : $state;
-            }, collect($state ?? [])->collapse()->map(fn(int $id) => $id))->values());
+            }, collect($state ?? [])->collapse()->map(fn (int $id) => $id))->values());
         });
 
         $this->loadStateFromRelationshipsUsing(function (Component $component, ?Model $record) {
             return $component->state(! $record ? [] : FilamentPermission::permissionGroupByPrefix($record->getAllPermissions())
-                ->map(fn(Collection $permissions) => $permissions->pluck('id'))
+                ->map(fn (Collection $permissions) => $permissions->pluck('id'))
                 ->toArray());
         });
     }
@@ -107,7 +108,7 @@ class PermissionCheckboxList extends Field
     private function checkboxLists(): Collection
     {
         return collect($this->getChildComponentContainer()->getFlatComponents())
-            ->filter(fn(Component $component) => is_a($component, CheckboxList::class));
+            ->filter(fn (Component $component) => is_a($component, CheckboxList::class));
     }
 
     private function checkIfAllCheckboxesAreChecked(): bool
@@ -121,7 +122,7 @@ class PermissionCheckboxList extends Field
     {
         /** @var Translator $translator */
         $translator = app('translator');
-        $key = 'filament-permission::permission.'.$section.'.'.$label;
+        $key = 'filament-permission::permission.' . $section . '.' . $label;
         if ($translator->has($key)) {
             return $translator->get($key);
         }
