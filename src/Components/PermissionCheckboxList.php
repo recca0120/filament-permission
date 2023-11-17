@@ -11,6 +11,7 @@ use Filament\Forms\Components\Section;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Illuminate\Translation\Translator;
 use Recca0120\FilamentPermission\FilamentPermission;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Traits\HasPermissions;
@@ -32,13 +33,11 @@ class PermissionCheckboxList extends Field
 
         $this->schema(
             FilamentPermission::permissionGroupByPrefix($permissions)
-                ->map(function (Collection $permissions) {
-                    return $permissions->keyBy('id')->map(function (Permission $permission) {
-                        return Str::of($permission->name)->after('.')->headline()->value();
-                    });
-                })
+                ->map(fn(Collection $permissions) => $permissions
+                    ->keyBy('id')
+                    ->map(fn($permission) => $this->translate('labels', Str::after($permission->name, '.'))))
                 ->map(function (Collection $options, string $entity) {
-                    return Section::make(Str::ucfirst($entity))
+                    return Section::make(fn() => $this->translate('entities', $entity))
                         ->compact()
                         ->schema([
                             CheckboxList::make($entity)->label('')
@@ -116,5 +115,17 @@ class PermissionCheckboxList extends Field
         return $this->checkboxLists()->flatMap(function (CheckboxList $checkboxList) {
             return collect($checkboxList->getEnabledOptions())->keys()->diff($checkboxList->getState());
         })->isEmpty();
+    }
+
+    private function translate(string $section, string $label): string
+    {
+        /** @var Translator $translator */
+        $translator = app('translator');
+        $key = 'filament-permission::permission.'.$section.'.'.$label;
+        if ($translator->has($key)) {
+            return $translator->get($key);
+        }
+
+        return Str::of($label)->headline();
     }
 }
